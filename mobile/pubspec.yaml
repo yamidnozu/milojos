@@ -1,0 +1,84 @@
+name: milojos_mobile
+description: "MilOjos — Plataforma de Seguridad Colaborativa Popayán, Cauca, Colombia"
+
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Estado (BLoC — ÚNICO gestor permitido) ──────────────────
+  flutter_bloc: ^8.1.5
+  hydrated_bloc: ^9.1.5
+  equatable: ^2.0.5
+
+  # ── Inyección de dependencias ────────────────────────────────
+  get_it: ^7.6.7
+  injectable: ^2.3.2
+
+  # ── Red y API ────────────────────────────────────────────────
+  dio: ^5.4.1
+  socket_io_client: ^2.0.3+1
+
+  # ── Autenticación (Supabase) ─────────────────────────────────
+  supabase_flutter: ^2.3.4
+
+  # ── Sensores (gesto shake) ───────────────────────────────────
+  sensors_plus: ^4.0.2
+
+  # ── Cámara (foto silenciosa en alerta) ──────────────────────
+  camera: ^0.10.5+9
+
+  # ── Geolocalización ─────────────────────────────────────────
+  geolocator: ^11.0.0
+  permission_handler: ^11.3.0
+
+  # ── Notificaciones Push ──────────────────────────────────────
+  firebase_core: ^2.27.0
+  firebase_messaging: ^14.8.0
+
+  # ── Suscripciones (Google Play Billing) ─────────────────────
+  in_app_purchase: ^3.1.13
+
+  # ── Utilidades ───────────────────────────────────────────────
+  dartz: ^0.10.1
+  logger: ^2.2.0
+  shared_preferences: ^2.2.2
+  connectivity_plus: ^6.0.3
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+  intl: ^0.19.0
+
+  # ── UI ───────────────────────────────────────────────────────
+  flutter_svg: ^2.0.10+1
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  gap: ^3.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # ── Lint ─────────────────────────────────────────────────────
+  very_good_analysis: ^6.0.0
+
+  # ── Testing ──────────────────────────────────────────────────
+  mocktail: ^1.0.3
+  bloc_test: ^9.1.7
+
+  # ── Generación de código ──────────────────────────────────────
+  build_runner: ^2.4.8
+  freezed: ^2.4.7
+  injectable_generator: ^2.4.3
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
