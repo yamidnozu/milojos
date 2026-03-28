@@ -11,20 +11,15 @@ import { UseGuards, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { AlertsService } from './alerts.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 /**
  * WebSocket Gateway para alertas de pánico en tiempo real.
- * 
- * TARGET SLA: Alerta entregada < 3 segundos end-to-end bajo 4G normal.
- * 
- * Compliance: Todos los payloads con ubicación son tratados como datos sensibles.
- * El log de acceso se registra en PostgreSQL (inmutable).
+ * Reúne la autenticación de Supabase + la lógica de PostGIS.
  */
 @WebSocketGateway({
   namespace: '/alerts',
-  cors: {
-    origin: '*', // Restringir en producción
-  },
+  cors: { origin: '*' }, // Restringir en prod
 })
 export class AlertsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -35,6 +30,8 @@ export class AlertsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(private readonly alertsService: AlertsService) {}
 
   handleConnection(client: Socket): void {
+    // Al conectarse se pueden agregar al room general si es necesario, 
+    // pero por privacidad preferimos la notificación FCM segmentada por PostGIS.
     this.logger.log(`Cliente conectado: ${client.id}`);
   }
 
@@ -44,12 +41,9 @@ export class AlertsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   /**
    * Evento: panic_trigger
-   * Recibe: { userId, latitude, longitude, photoBase64, timestamp }
-   * Emite: 'panic_confirmed' al cliente + FCM push a vecinos/policía/admin
-   * 
-   * Compliance: photoBase64 se envía a S3 con URL firmada (90 días).
-   * La ubicación exacta NUNCA se comparte con vecinos, solo la zona aproximada.
+   * Con validación de token JWT desde Flutter (Supabase)
    */
+  @UseGuards(JwtAuthGuard)
   @SubscribeMessage('panic_trigger')
   async handlePanicTrigger(
     @ConnectedSocket() client: Socket,
@@ -58,20 +52,20 @@ export class AlertsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       this.logger.warn(`🚨 Alerta de pánico recibida de userId: ${dto.userId}`);
 
-      // 1. Guardar alerta en PostgreSQL
+      // 1. Guardar alerta en PostgreSQL usando TypeORM
       const alert = await this.alertsService.createAlert(dto);
 
-      // 2. Obtener vecinos en radio vía PostGIS
+      // 2. Ejecutar la función PostGIS 'get_neighbors_in_radius' para buscar a <=500m
       const neighbors = await this.alertsService.getNeighborsInRadius(
         dto.latitude,
         dto.longitude,
         500, // metros
       );
 
-      // 3. Enviar FCM push a vecinos, policía y admin de institución
+      // 3. Enviar FCM push a los teléfonos de esos vecinos
       await this.alertsService.notifyResponders(alert, neighbors);
 
-      // 4. Confirmar al cliente
+      // 4. Confirmar al dispositivo local que la mandó
       client.emit('panic_confirmed', {
         alertId: alert.id,
         status: 'active',
@@ -79,9 +73,7 @@ export class AlertsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         timestamp: new Date().toISOString(),
       });
 
-      this.logger.log(
-        `✅ Alerta ${alert.id} enviada a ${neighbors.length} respondedores`,
-      );
+      this.logger.log(`✅ Alerta ${alert.id} procesada con ${neighbors.length} respondedores en radio de 500m.`);
     } catch (error) {
       this.logger.error(`❌ Error en panic_trigger: ${error.message}`);
       client.emit('panic_error', {
@@ -91,10 +83,7 @@ export class AlertsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  /**
-   * Evento: cancel_alert
-   * Cancela una alerta activa (disponible hasta 30s después de activar)
-   */
+  @UseGuards(JwtAuthGuard)
   @SubscribeMessage('cancel_alert')
   async handleCancelAlert(
     @ConnectedSocket() client: Socket,
@@ -102,16 +91,13 @@ export class AlertsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ): Promise<void> {
     const result = await this.alertsService.cancelAlert(
       payload.alertId,
-      payload.userId,
+      payload.userId, // Validamos que quien cancela sea el mismo que generó (desde JWT req idealmente)
     );
 
     client.emit('alert_cancelled', { success: result });
   }
 
-  /**
-   * Evento: false_alarm
-   * Marca una alerta como falsa alarma
-   */
+  @UseGuards(JwtAuthGuard)
   @SubscribeMessage('false_alarm')
   async handleFalseAlarm(
     @ConnectedSocket() client: Socket,
