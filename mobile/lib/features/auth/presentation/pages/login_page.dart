@@ -122,8 +122,7 @@ class LoginPage extends StatelessWidget {
                     textColor: Colors.white,
                     isBordered: false,
                     onPressed: () {
-                      // Simular escaneo de QR para Sprint 1
-                      _scanQRCode(context);
+                      context.push('/qr');
                     },
                   ),
                   const SizedBox(height: 40),
@@ -187,36 +186,4 @@ class LoginPage extends StatelessWidget {
     );
   }
 
-  void _scanQRCode(BuildContext context) {
-    // Scaffold UI para simular apertura de cámara en Sprint 1
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Escanear QR Estudiantil'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.qr_code_2, size: 100, color: Colors.black87),
-            const SizedBox(height: 16),
-            const Text(
-              'Apunta la cámara al código QR proporcionado por el Rector de tu colegio.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Emular envío de token Cifrado al servidor
-                context.read<AuthBloc>().add(
-                  const SignInQRRequested('DUMMY_STUDENT_QR_TOKEN_123')
-                );
-              },
-              child: const Text('Simular Escaneo Exitoso'),
-            )
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -11,6 +11,7 @@ import 'package:milojos_mobile/features/panic_alert/presentation/pages/panic_con
 
 import 'package:milojos_mobile/features/cameras/presentation/pages/camera_stream_page.dart';
 import 'package:milojos_mobile/features/subscriptions/presentation/pages/subscription_paywall_page.dart';
+import 'package:milojos_mobile/features/auth/presentation/pages/qr_scanner_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -61,6 +62,10 @@ class AppRouter {
           fullscreenDialog: true,
           child: PanicConfirmationPage(),
         ),
+      ),
+      GoRoute(
+        path: '/qr',
+        builder: (context, state) => const QrScannerPage(),
       ),
       GoRoute(
         path: '/camera/:id',
