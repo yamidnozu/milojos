@@ -20,6 +20,8 @@ dependencies:
   flutter_webrtc: ^0.10.4
   in_app_purchase: ^3.1.13
   mobile_scanner: ^4.0.0
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.19
 
   # ── Inyección de dependencias ────────────────────────────────
   get_it: ^7.6.7
