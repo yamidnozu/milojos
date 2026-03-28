@@ -9,6 +9,9 @@ import 'package:milojos_mobile/features/dashboard/presentation/pages/dashboard_p
 import 'package:milojos_mobile/features/map/presentation/pages/onboarding_map_location_page.dart';
 import 'package:milojos_mobile/features/panic_alert/presentation/pages/panic_confirmation_page.dart';
 
+import 'package:milojos_mobile/features/cameras/presentation/pages/camera_stream_page.dart';
+import 'package:milojos_mobile/features/subscriptions/presentation/pages/subscription_paywall_page.dart';
+
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 class AppRouter {
@@ -33,11 +36,7 @@ class AppRouter {
       
       // Si está autenticado
       if (authState is Authenticated) {
-        // FIXME: Lógica para saber si el usuario debe onboardear en el mapa.
-        // Simularemos que todos van a '/map' una vez por Sprint 1, 
-        // pero luego esto lo marca un booleano en UserEntity.
-        
-        // Si está en login y es auténtico: envíalo a Home.
+        // En un caso real se usa bool hasSeenOnboarding, iteramos al Home desde Login por brevedad
         if (isLoggingIn) return '/home';
       }
       
@@ -56,13 +55,22 @@ class AppRouter {
         path: '/home',
         builder: (context, state) => const DashboardPage(),
       ),
-      // Ruta extra para la Alerta en ModalFullScreen
       GoRoute(
         path: '/panic',
         pageBuilder: (context, state) => const MaterialPage(
           fullscreenDialog: true,
           child: PanicConfirmationPage(),
         ),
+      ),
+      GoRoute(
+        path: '/camera/:id',
+        builder: (context, state) => CameraStreamPage(
+          cameraId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/subscription',
+        builder: (context, state) => const SubscriptionPaywallPage(),
       ),
     ],
   );

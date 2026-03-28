@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:milojos_mobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:milojos_mobile/features/auth/presentation/bloc/auth_event.dart';
 import 'package:milojos_mobile/features/auth/presentation/bloc/auth_state.dart';
+import 'package:go_router/go_router.dart';
 import 'package:milojos_mobile/features/panic_alert/presentation/bloc/panic_bloc.dart';
 import 'package:milojos_mobile/features/panic_alert/presentation/bloc/panic_event.dart';
 import 'package:milojos_mobile/features/panic_alert/presentation/widgets/shake_detector_widget.dart';
@@ -23,6 +24,11 @@ class DashboardPage extends StatelessWidget {
           foregroundColor: Colors.red.shade700,
           elevation: 1,
           actions: [
+            TextButton.icon(
+              onPressed: () => context.push('/subscription'),
+              icon: const Icon(Icons.star_rounded, color: Colors.orange),
+              label: const Text('PRO', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+            ),
             IconButton(
               icon: const Icon(Icons.logout_rounded, color: Colors.black54),
               onPressed: () {
@@ -139,9 +145,7 @@ class DashboardPage extends StatelessWidget {
                     label: 'Cámaras IP',
                     color: Colors.blue.shade600,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Módulo de video: Sprint 2'))
-                      );
+                      context.push('/camera/cam-1234');
                     },
                   ),
                   const SizedBox(width: 16),

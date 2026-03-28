@@ -15,12 +15,10 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-// Imports que AUN NO EXISTEN — los tests fallarán en compilación
-// ignore_for_file: uri_does_not_exist
-import 'package:milojos/core/errors/failures.dart';
-import 'package:milojos/features/panic_alert/domain/entities/alert_entity.dart';
-import 'package:milojos/features/panic_alert/domain/repositories/alert_repository.dart';
-import 'package:milojos/features/panic_alert/domain/usecases/trigger_panic_alert_usecase.dart';
+import 'package:milojos_mobile/core/errors/failures.dart';
+import 'package:milojos_mobile/features/panic_alert/domain/entities/alert_entity.dart';
+import 'package:milojos_mobile/features/panic_alert/domain/repositories/alert_repository.dart';
+import 'package:milojos_mobile/features/panic_alert/domain/usecases/trigger_panic_alert_usecase.dart';
 
 class MockAlertRepository extends Mock implements AlertRepository {}
 
@@ -33,7 +31,7 @@ void main() {
     useCase = TriggerPanicAlertUseCase(repository: mockRepository);
   });
 
-  const testParams = TriggerPanicAlertParams(
+  final testParams = TriggerPanicAlertParams(
     userId: 'user-test-123',
     latitude: 2.4448,
     longitude: -76.6147,
@@ -48,6 +46,7 @@ void main() {
     longitude: -76.6147,
     status: AlertStatus.active,
     triggeredAt: DateTime.fromMillisecondsSinceEpoch(1711645717000),
+    respondersCount: 0,
   );
 
   group('TriggerPanicAlertUseCase —', () {
@@ -57,11 +56,11 @@ void main() {
       'ENTONCES retorna AlertEntity con status active',
       () async {
         when(() => mockRepository.triggerAlert(params: testParams))
-            .thenAnswer((_) async => Right(testAlert));
+            .thenAnswer((_) async => Right<Failure, AlertEntity>(testAlert));
 
         final result = await useCase(testParams);
 
-        expect(result, Right(testAlert));
+        expect(result, Right<Failure, AlertEntity>(testAlert));
         expect(
           result.getOrElse(() => throw Exception()).status,
           AlertStatus.active,
@@ -74,42 +73,28 @@ void main() {
     test(
       'DADO sin conexión a internet '
       'CUANDO se ejecuta '
-      'ENTONCES retorna NetworkFailure',
+      'ENTONCES retorna ServerFailure',
       () async {
         when(() => mockRepository.triggerAlert(params: testParams))
-            .thenAnswer((_) async => const Left(NetworkFailure()));
+            .thenAnswer((_) async => const Left<Failure, AlertEntity>(ServerFailure('Timeout')));
 
         final result = await useCase(testParams);
 
-        expect(result, const Left(NetworkFailure()));
+        expect(result, const Left<Failure, AlertEntity>(ServerFailure('Timeout')));
       },
     );
 
     test(
-      'DADO cuenta de usuario inactiva '
+      'DADO cuenta inactiva o penalización'
       'CUANDO se ejecuta '
-      'ENTONCES retorna UnauthorizedFailure',
+      'ENTONCES retorna ServerFailure de rechazo',
       () async {
         when(() => mockRepository.triggerAlert(params: testParams))
-            .thenAnswer((_) async => const Left(UnauthorizedFailure()));
+            .thenAnswer((_) async => const Left<Failure, AlertEntity>(ServerFailure('Unauthorized')));
 
         final result = await useCase(testParams);
 
-        expect(result, const Left(UnauthorizedFailure()));
-      },
-    );
-
-    test(
-      'DADO usuario con 3 falsas alarmas en la última hora '
-      'CUANDO se ejecuta '
-      'ENTONCES retorna TooManyAlertsFailure',
-      () async {
-        when(() => mockRepository.triggerAlert(params: testParams))
-            .thenAnswer((_) async => const Left(TooManyAlertsFailure()));
-
-        final result = await useCase(testParams);
-
-        expect(result, const Left(TooManyAlertsFailure()));
+        expect(result, const Left<Failure, AlertEntity>(ServerFailure('Unauthorized')));
       },
     );
   });

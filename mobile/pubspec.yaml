@@ -17,6 +17,8 @@ dependencies:
   hydrated_bloc: ^9.1.5
   equatable: ^2.0.5
   go_router: ^13.2.0
+  flutter_webrtc: ^0.10.4
+  in_app_purchase: ^3.1.13
 
   # ── Inyección de dependencias ────────────────────────────────
   get_it: ^7.6.7
