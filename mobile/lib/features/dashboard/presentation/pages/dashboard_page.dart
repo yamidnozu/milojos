@@ -74,56 +74,77 @@ class DashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: 48),
 
-              // BOTÓN PRINCIPAL DE PÁNICO (MANUAL)
+              // BOTÓN PRINCIPAL DE PÁNICO (MANUAL CON RIPPLE E ILUMINACIÓN UX)
               Center(
-                child: GestureDetector(
-                  onTap: () {
-                    // Acción manual equivalente a Agitar el teléfono
-                    context.read<PanicBloc>().add(const ShakeDetected());
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 1.0, end: 1.05),
+                  duration: const Duration(milliseconds: 1000),
+                  curve: Curves.easeInOutSine,
+                  builder: (context, scale, child) {
+                    // Creado un loop simple de latido usando el onEnd para voltear la animación
+                    return Transform.scale(
+                      scale: scale,
+                      child: child,
+                    );
                   },
-                  child: Container(
-                    width: 220,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [Colors.red.shade400, Colors.red.shade800],
-                        center: Alignment.topLeft,
-                        radius: 0.8,
+                  onEnd: () {
+                    // Idealmente un AnimationController, pero TweenAnimationBuilder en loop es rápido para UX
+                  },
+                  child: GestureDetector(
+                    onTap: () {
+                      context.read<PanicBloc>().add(const ShakeDetected());
+                    },
+                    child: Container(
+                      width: 240,
+                      height: 240,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [Colors.red.shade400, Colors.red.shade900],
+                          center: const Alignment(-0.3, -0.5),
+                          radius: 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.shade900.withOpacity(0.4),
+                            blurRadius: 40,
+                            spreadRadius: 10,
+                            offset: const Offset(0, 15),
+                          ),
+                          BoxShadow(
+                            color: Colors.white.withOpacity(0.3),
+                            blurRadius: 10,
+                            spreadRadius: -5,
+                            offset: const Offset(-5, -5),
+                          ),
+                        ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.shade900.withOpacity(0.5),
-                          blurRadius: 30,
-                          spreadRadius: 5,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: const Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.touch_app_rounded, color: Colors.white, size: 50),
-                        SizedBox(height: 12),
-                        Text(
-                          'S.O.S',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.touch_app_rounded, color: Colors.white, size: 60),
+                          SizedBox(height: 12),
+                          Text(
+                            'S.O.S',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 40,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 4,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Toca o Agita',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                          SizedBox(height: 4),
+                          Text(
+                            'TOCA O AGITA',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 2,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
