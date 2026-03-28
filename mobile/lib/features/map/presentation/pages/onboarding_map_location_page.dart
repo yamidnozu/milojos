@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:milojos_mobile/core/errors/failures.dart';
+import 'package:go_router/go_router.dart';
 import 'package:milojos_mobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:milojos_mobile/features/auth/presentation/bloc/auth_state.dart';
 // Note: en un proyecto real importaríamos flutter_map o google_maps_flutter
@@ -23,7 +23,7 @@ class _OnboardingMapLocationPageState extends State<OnboardingMapLocationPage> {
 
     // Mock HTTP PUT a nuestro nuevo endpoint NestJS: /v1/users/:id/location
     // En Sprint 1 usamos DioClient() aquí
-    await Future.delayed(const Duration(seconds: 2));
+    await Future<void>.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
     setState(() => _isSaving = false);
@@ -35,7 +35,7 @@ class _OnboardingMapLocationPageState extends State<OnboardingMapLocationPage> {
         backgroundColor: Colors.green,
       ),
     );
-    // context.go('/home'); // GoRouter integration later
+    context.go('/home');
   }
 
   @override
@@ -115,7 +115,7 @@ class _OnboardingMapLocationPageState extends State<OnboardingMapLocationPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    '¡Hola ${user?.fullName?.split(' ').first ?? 'Vecino'}!',
+                    '¡Hola ${user?.fullName.split(' ').first ?? 'Vecino'}!',
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),

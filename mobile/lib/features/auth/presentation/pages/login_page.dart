@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:milojos_mobile/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:milojos_mobile/features/auth/presentation/bloc/auth_event.dart';
 import 'package:milojos_mobile/features/auth/presentation/bloc/auth_state.dart';
@@ -24,8 +25,8 @@ class LoginPage extends StatelessWidget {
               ),
             );
           } else if (state is Authenticated) {
-            // Ir al Home o Map
-            // context.go('/home'); // Utilizar GoRouter
+            // Ir al Onboarding Maps (Simulación de 1era vez)
+            context.go('/map');
           }
         },
         builder: (context, state) {
