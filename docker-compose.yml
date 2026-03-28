@@ -1,0 +1,126 @@
+version: '3.9'
+
+services:
+  # ─── Base de datos principal con soporte geoespacial ───
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: milojos_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: milojos_dev
+      POSTGRES_USER: milojos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./database/seeds.sql:/docker-entrypoint-initdb.d/02_seeds.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U milojos -d milojos_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Cache y PubSub para alertas en tiempo real ───
+  redis:
+    image: redis:7-alpine
+    container_name: milojos_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-dev_redis}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-dev_redis}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Backend NestJS ───
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: milojos_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://milojos:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/milojos_dev
+      REDIS_URL: redis://:${REDIS_PASSWORD:-dev_redis}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      FCM_SERVER_KEY: ${FCM_SERVER_KEY}
+      GOOGLE_PLAY_PACKAGE_NAME: ${GOOGLE_PLAY_PACKAGE_NAME:-com.milojos.app}
+      GOOGLE_PLAY_SERVICE_ACCOUNT: ${GOOGLE_PLAY_SERVICE_ACCOUNT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-milojos-alerts}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      MEDIASOUP_ANNOUNCED_IP: ${MEDIASOUP_ANNOUNCED_IP:-127.0.0.1}
+      ALERT_RADIUS_METERS: ${ALERT_RADIUS_METERS:-500}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # ─── Servidor de Video WebRTC (Mediasoup SFU) ───
+  mediasoup:
+    build:
+      context: ./mediasoup
+      dockerfile: Dockerfile.dev
+    container_name: milojos_mediasoup
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+      - "${MEDIASOUP_MIN_PORT:-10000}-${MEDIASOUP_MAX_PORT:-10100}:${MEDIASOUP_MIN_PORT:-10000}-${MEDIASOUP_MAX_PORT:-10100}/udp"
+    environment:
+      MEDIASOUP_ANNOUNCED_IP: ${MEDIASOUP_ANNOUNCED_IP:-127.0.0.1}
+      MEDIASOUP_MIN_PORT: ${MEDIASOUP_MIN_PORT:-10000}
+      MEDIASOUP_MAX_PORT: ${MEDIASOUP_MAX_PORT:-10100}
+      BACKEND_URL: http://backend:3000
+    volumes:
+      - ./mediasoup:/app
+      - /app/node_modules
+
+  # ─── Adminer: UI para PostgreSQL (solo desarrollo) ───
+  adminer:
+    image: adminer:latest
+    container_name: milojos_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+
+  # ─── Redis Commander: UI para Redis (solo desarrollo) ───
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: milojos_redis_ui
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOSTS: "local:redis:6379:0:${REDIS_PASSWORD:-dev_redis}"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: milojos_network

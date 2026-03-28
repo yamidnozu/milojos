@@ -1,0 +1,161 @@
+name: MilOjos CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ─── Flutter: Lint + Test + Coverage ───────────────────────────
+  flutter_checks:
+    name: Flutter — Lint · Test · Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        working-directory: ./mobile
+        run: flutter pub get
+
+      - name: Verify formatting
+        working-directory: ./mobile
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze — fatal infos
+        working-directory: ./mobile
+        run: flutter analyze --fatal-infos
+
+      - name: Run tests with coverage
+        working-directory: ./mobile
+        run: flutter test --coverage --reporter=expanded
+
+      - name: Check coverage threshold (80%)
+        uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: mobile/coverage/lcov.info
+          min_coverage: 80
+          exclude: "**/*.g.dart **/*.freezed.dart **/l10n/**"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: mobile/coverage/lcov.info
+          flags: flutter
+
+  # ─── Backend: NestJS Lint + Test ───────────────────────────────
+  backend_checks:
+    name: Backend — Lint · Test · Coverage
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: milojos
+          POSTGRES_DB: milojos_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Lint
+        working-directory: ./backend
+        run: npm run lint
+
+      - name: Unit tests + coverage
+        working-directory: ./backend
+        run: npm run test:cov
+        env:
+          DATABASE_URL: postgresql://milojos:test_password@localhost:5432/milojos_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test_jwt_secret_for_ci_only
+          NODE_ENV: test
+
+      - name: Upload backend coverage
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: backend/coverage/lcov.info
+          flags: nestjs
+
+  # ─── Docker Compose Build Check ────────────────────────────────
+  docker_build:
+    name: Docker — Build Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create .env from example
+        run: cp .env.example .env
+
+      - name: Build docker services
+        run: docker-compose build --no-cache backend mediasoup
+
+  # ─── Security: Dependency Audit ────────────────────────────────
+  security_audit:
+    name: Security — Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Audit backend dependencies
+        working-directory: ./backend
+        run: npm audit --audit-level=high
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+
+      - name: Audit Flutter dependencies
+        working-directory: ./mobile
+        run: flutter pub outdated --no-color || true

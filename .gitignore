@@ -1,0 +1,63 @@
+# Dependencias de Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Flutter
+mobile/.dart_tool/
+mobile/.packages
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/
+mobile/android/.gradle
+mobile/android/local.properties
+mobile/android/key.properties
+mobile/ios/Flutter/.last_build_id
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/coverage/
+mobile/*.g.dart
+mobile/*.freezed.dart
+
+# NestJS / Node
+backend/dist/
+backend/node_modules/
+backend/coverage/
+
+# Mediasoup
+mediasoup/node_modules/
+mediasoup/dist/
+
+# Docker
+.docker-data/
+
+# IDEs
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Dart/Flutter
+*.dart_aot
+**/doc/api/
+
+# Logs
+logs/
+*.log
+
+# Claves y secretos (¡NUNCA subir!)
+*.pem
+*.key
+*.keystore
+google-services.json
+GoogleService-Info.plist
+service-account.json
