@@ -7,6 +7,7 @@ import { CamerasModule } from './modules/cameras/cameras.module';
 import { UsersModule } from './modules/users/users.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     UsersModule,
     SubscriptionsModule,
     NotificationsModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}
