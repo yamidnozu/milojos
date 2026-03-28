@@ -38,10 +38,14 @@ class _PanicConfirmationPageState extends State<PanicConfirmationPage>
 
   void _startCountdown() {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       setState(() => _secondsLeft--);
       if (_secondsLeft <= 0) {
         timer.cancel();
-        _cancel();
+        _confirm(); // Ejecutar pánico automáticamente después de 3s
       }
     });
   }
