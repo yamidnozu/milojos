@@ -91,9 +91,21 @@ export class CamerasService implements OnModuleInit, OnModuleDestroy {
    * Registra una nueva cámara institucional (ej: Colegio) a través del portal
    */
   async registerInstitutionCamera(institutionId: string, urlAuthRtsp: string, lat: number, lng: number): Promise<CameraEntity> {
+    // SECURITY AGENT: Cifrado en reposo para URLs de las cámaras P2P/RTSP usando AES-256-CBC
+    const crypto = require('crypto');
+    const algorithm = 'aes-256-cbc';
+    const key = process.env.RTSP_ENCRYPTION_KEY || crypto.scryptSync('milojos_secret_token_123', 'salt', 32); 
+    const iv = crypto.randomBytes(16);
+    
+    // Encriptamos antes de tocar el Repositorio TypeORM
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
+    let encrypted = cipher.update(urlAuthRtsp, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    const secureUrl = `${iv.toString('hex')}:${encrypted}`;
+
     const camera = this.cameraRepository.create({
       institutionId,
-      rtspUrl: urlAuthRtsp, // En la BD local estaria con encriptación Vault ideally
+      rtspUrl: secureUrl, // Guaradada de forma cifrada en la base de datos
       latitude: lat,
       longitude: lng,
       isActive: true,
