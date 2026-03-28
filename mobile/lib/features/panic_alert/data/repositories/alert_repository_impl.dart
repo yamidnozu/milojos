@@ -65,7 +65,7 @@ class AlertRepositoryImpl implements AlertRepository {
     _socket.once('panic_confirmed', (data) {
       if (completer.isCompleted) return;
 
-      final Map<String, dynamic> response = Map<String, dynamic>.from(data);
+      final Map<String, dynamic> response = Map<String, dynamic>.from(data as Map);
       final alertId = response['alertId'] as String;
       final respondersNotified = response['respondersNotified'] as int;
       final statusStr = response['status'] as String;
